@@ -25,6 +25,13 @@ defmodule StreamsPractice do
     |> Enum.reduce("", &line_bigger/2)
   end
 
+  def words_per_line!(path) do
+    path
+    |> File.stream!
+    |> Stream.map(&(length(String.split(&1))))
+    |> Enum.to_list 
+  end
+
   defp line_bigger(x, y) do
     case String.length(x) > String.length(y) do
       true -> x

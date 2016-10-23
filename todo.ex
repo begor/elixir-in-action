@@ -1,16 +1,11 @@
 defmodule ToDo do
-  def new, do: HashDict.new
+  def new, do: MultiDict.new
 
   def add_entry(list, date, title) do
-    HashDict.update(
-      list,
-      date,
-      [title],
-      fn(titles) -> [title | titles] end
-    )
+    MultiDict.add(list, date, title)
   end
 
   def entries(list, date) do
-    HashDict.get(list, date, []) 
+    MultiDict.get(list, date)
   end
 end

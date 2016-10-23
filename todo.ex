@@ -14,4 +14,14 @@ defmodule TodoList do
     |> Stream.filter(fn({_, entry}) -> entry.date == date end)
     |> Enum.map(fn({_, entry}) -> entry end)
   end
+
+  def update_entry(%TodoList{entries: entries} = list, entry, updater) do
+    case entries[entry.id] do
+      nil -> list
+      old_entry ->
+        new_entry = updater.(old_entry)
+        new_entries = HashDict.put(entries, new_entry.id, new_entry)
+        %TodoList{list | entries: new_entries}
+    end
+  end
 end

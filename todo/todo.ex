@@ -25,3 +25,16 @@ defmodule TodoList do
     end
   end
 end
+
+defmodule TodoList.CsvImporter do
+  def import(file) do
+    file
+    |> File.stream!
+    |> Stream.map(&String.replace(&1, "\n", ""))
+    |> Stream.map(&String.split(&1, ","))
+    |> Stream.map(fn([date, task]) -> {String.split(date, "/"), task} end)
+    |> Stream.map(fn({[y, m, d], task}) -> {{String.to_integer(y), String.to_integer(m), String.to_integer(d)}, task} end)
+    |> Enum.to_list
+    |> IO.inspect
+  end
+end

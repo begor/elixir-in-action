@@ -2,6 +2,19 @@ defimpl String.Chars, for: TodoList do
   def to_string(_), do: "#TodoList"
 end
 
+defimpl Collectable, for: TodoList do
+  def into(original) do
+    {original, &into_callback/2}
+  end
+
+  defp into_callback(todo_list, {:cont, entry}) do
+    TodoList.add_entry(todo_list, entry)
+  end
+  defp into_callback(todo_list, :done), do: todo_list
+  #:halt indicates that the operation has been canceled, and the return value is ignored.
+  defp into_callback(todo_list, :halt), do: :ok
+end
+
 defmodule TodoList do
   defstruct auto_id: 1, entries: HashDict.new
 

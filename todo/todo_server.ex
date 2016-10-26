@@ -15,6 +15,41 @@ defimpl Collectable, for: TodoList do
   defp into_callback(todo_list, :halt), do: :ok
 end
 
+defmodule TodoServer do
+  def start do
+    spawn(fn() -> loop(TodoList.new) end)
+  end
+
+  def add_entry(todo_server, entry) do
+    send(todo_server, {:add_entry, entry})
+  end
+
+  def entries(todo_server, date) do
+    send(todo_server, {:entries, date})
+
+    receive do
+      {:entries, entries} -> entries
+    after 5000 ->
+      {:error, :timeout}
+    end
+  end
+
+  defp loop(todo_list) do
+    new_list = receive do
+      message -> handle_message(todo_list, message)
+    end
+
+    loop(new_list)
+  end
+
+  defp handle_message(todo_list, {:add_entry, entry}) do
+    TodoList.add_entry(todo_list, entry)
+  end
+  defp handle_message(todo_list, {:entries, date}) do
+    TodoList.entries(todo_list, date)
+  end
+end
+
 defmodule TodoList do
   defstruct auto_id: 1, entries: HashDict.new
 

@@ -96,6 +96,10 @@ defmodule TodoList do
         %TodoList{list | entries: new_entries}
     end
   end
+
+  def delete_entry(%TodoList{entries: entries} = list, entry_id) do
+    %TodoList{list | entries: HashDict.delete(entries, entry_id)}
+  end
 end
 
 defmodule TodoList.CsvImporter do

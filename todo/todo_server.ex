@@ -24,6 +24,10 @@ defmodule TodoServer do
     send(todo_server, {:add_entry, entry})
   end
 
+  def update_entry(todo_server, entry, updater) do
+    send(todo_server, {:update_entry, entry, updater})
+  end
+
   def entries(todo_server, date) do
     send(todo_server, {:entries, date})
 
@@ -47,6 +51,9 @@ defmodule TodoServer do
   end
   defp handle_message(todo_list, {:entries, date}) do
     TodoList.entries(todo_list, date)
+  end
+  defp handle_message(todo_list, {:update_entry, entry, updater}) do
+    TodoList.update_entry(todo_list, entry, updater)
   end
 end
 

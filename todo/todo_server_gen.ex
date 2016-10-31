@@ -1,70 +1,39 @@
-defmodule ServerProcess do
-  def run(callback_module) do
-    spawn(fn ->
-      initial_state = callback_module.init
-      loop(callback_module, initial_state)
-    end)
-  end
-
-  def call(pid, message) do
-    send(pid, {:call, self, message})
-    receive do
-      {:response, response} -> response
-    end
-  end
-
-  def cast(pid, message) do
-    send(pid, {:cast, self, message})
-  end
-
-  defp loop(module, state) do
-    receive do
-      {:call, from, message} -> 
-        {response, new_state} = module.handle_call(message, state)
-        send(from, {:response, response})
-        loop(module, new_state)
-      {:cast, message} ->
-        new_state = module.handle_cast(message, state)
-        loop(module, new_state)
-    end
-    
-  end
-end
-
-
 defmodule TodoServer do
-  def start, do: ServerProcess.run(TodoServer)
+  use GenServer
 
-  def init, do: TodoList.new
+
+  def start, do: GenServer.start(TodoServer, nil)
+
+  def init(_), do: {:ok, TodoList.new}
 
   def add_entry(pid, entry) do
-    ServerProcess.cast(pid, {:add_entry, entry})
+    GenServer.cast(pid, {:add_entry, entry})
   end
 
   def update_entry(pid, entry, updater) do
-    ServerProcess.cast(pid, {:update_entry, entry, updater})
+    GenServer.cast(pid, {:update_entry, entry, updater})
   end
 
   def delete_entry(pid, entry) do
-    ServerProcess.cast(pid, {:delete_entry, entry})
+    GenServer.cast(pid, {:delete_entry, entry})
   end
 
   def entries(pid, date) do
-    ServerProcess.call(pid, {:entries, date})
+    GenServer.call(pid, {:entries, date})
   end
 
   def handle_cast({:add_entry, entry}, todo_list) do
-    TodoList.add_entry(todo_list, entry)
+    {:noreply, TodoList.add_entry(todo_list, entry)}
   end
   def handle_cast({:update_entry, entry, updater}, todo_list) do
-    TodoList.update_entry(todo_list, entry, updater)
+    {:noreply, TodoList.update_entry(todo_list, entry, updater)}
   end
   def handle_cast({:delete_entry, entry}, todo_list) do
-    TodoList.delete_entry(todo_list, entry)
+    {:noreply, TodoList.delete_entry(todo_list, entry)}
   end
 
-  def handle_call({:entries, date}, todo_list) do
-    {TodoList.entries(todo_list, date), todo_list}
+  def handle_call({:entries, date}, _, todo_list) do
+    {:reply, TodoList.entries(todo_list, date), todo_list}
   end
 end
 

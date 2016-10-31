@@ -13,6 +13,10 @@ defmodule ServerProcess do
     end
   end
 
+  def cast(pid, message) do
+    send(pid, {:cast, self, message})
+  end
+
   defp loop(module, state) do
     receive do
       {:call, from, message} -> 
@@ -33,17 +37,18 @@ defmodule KeyValue do
   def init, do: HashDict.new
 
   def put(pid, key, value) do
-    ServerProcess.call(pid, {:put, key, value})
+    ServerProcess.cast(pid, {:put, key, value})
   end
 
   def get(pid, key) do
     ServerProcess.call(pid, {:get, key})
   end
 
-  def handle_call({:put, key, value}, state) do
-    {:ok, HashDict.put(state, key, value)}
-  end
   def handle_call({:get, key}, state) do
-    {:ok, HashDict.get(state, key)}
+    {HashDict.get(state, key), state}
+  end
+
+  def handle_cast({:put, key, value}, state) do
+    HashDict.put(state, key, value)
   end
 end 

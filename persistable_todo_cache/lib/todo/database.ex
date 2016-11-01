@@ -25,19 +25,25 @@ defmodule Todo.Database do
 # But this comes at the cost of consistency, because you can’t be confident about whether a request has succeeded.
 
   def handle_cast({:store, key, data}, db_folder) do
-    file_name(db_folder, key)
-    |> File.write!(:erlang.term_to_binary(data))
+    spawn(fn ->
+      file_name(db_folder, key)
+      |> File.write!(:erlang.term_to_binary(data))
+    end)
 
     {:noreply, db_folder}
   end
 
-  def handle_call({:get, key}, _, db_folder) do
-    data = case File.read(file_name(db_folder, key)) do
-      {:ok, contents} -> :erlang.binary_to_term(contents)
-      _ -> nil
-    end
+  def handle_call({:get, key}, caller, db_folder) do
 
-    {:reply, data, db_folder}
+    spawn(fn -> 
+      data = case File.read(file_name(db_folder, key)) do
+        {:ok, contents} -> :erlang.binary_to_term(contents)
+        _ -> nil
+      end
+      GenServer.reply(caller, data)
+    end)
+
+    {:noreply, db_folder}
   end 
 
   defp file_name(db_folder, key), do: "#{db_folder}/#{key}"

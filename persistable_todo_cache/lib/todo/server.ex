@@ -4,7 +4,7 @@ defmodule Todo.Server do
 
   def start(name), do: GenServer.start(Todo.Server, name)
 
-  def init(name), do: {:ok, {name, Todo.List.new}}
+  def init(name), do: {:ok, {name, Todo.Database.get(name) || Todo.List.new}}
 
   def add_entry(pid, entry) do
     GenServer.cast(pid, {:add_entry, entry})

@@ -3,12 +3,10 @@ defmodule Todo.Server do
 
 
   def start(name) do
-    IO.puts "Starting server #{name}"
     GenServer.start(__MODULE__, name)
   end
   
   def init(name) do
-    IO.puts "Init server #{name}"
     {:ok, {name, Todo.Database.get(name) || Todo.List.new}}
   end
 

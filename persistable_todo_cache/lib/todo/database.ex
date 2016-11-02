@@ -12,8 +12,6 @@ defmodule Todo.Database do
 
   def get(key) do
     worker = GenServer.call(:database_server, {:get_worker, key})
-    IO.puts "Got worker"
-    IO.inspect worker
     Todo.DatabaseWorker.get(worker, key)
   end
 
@@ -25,11 +23,9 @@ defmodule Todo.Database do
 
   def handle_call({:get_worker, key}, caller, {db_folder, workers}) do
     key_hash = :erlang.phash2(key, 3)
-    IO.puts "Hash"
-    IO.inspect key_hash
-    {:reply, HashDict.get(workers, key_hash), workers}
+    {:reply, HashDict.get(workers, key_hash), {db_folder, workers}}
   end
-  def handle_call(m, _, s) do
+  def handle_call(_, _, s) do
     {:noreply, s}
   end
 

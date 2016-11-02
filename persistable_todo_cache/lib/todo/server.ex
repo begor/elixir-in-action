@@ -2,9 +2,15 @@ defmodule Todo.Server do
   use GenServer
 
 
-  def start(name), do: GenServer.start(Todo.Server, name)
-
-  def init(name), do: {:ok, {name, Todo.Database.get(name) || Todo.List.new}}
+  def start(name) do
+    IO.puts "Starting server #{name}"
+    GenServer.start(__MODULE__, name)
+  end
+  
+  def init(name) do
+    IO.puts "Init server #{name}"
+    {:ok, {name, Todo.Database.get(name) || Todo.List.new}}
+  end
 
   def add_entry(pid, entry) do
     GenServer.cast(pid, {:add_entry, entry})

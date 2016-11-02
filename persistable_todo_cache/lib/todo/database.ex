@@ -6,45 +6,40 @@ defmodule Todo.Database do
   end
 
   def store(key, data) do
-    GenServer.cast(:database_server, {:store, key, data})
+    worker = GenServer.call(:database_server, {:get_worker, key})
+    Todo.DatabaseWorker.store(worker, key, data)
   end
 
   def get(key) do
-    GenServer.call(:database_server, {:get, key})
+    worker = GenServer.call(:database_server, {:get_worker, key})
+    IO.puts "Got worker"
+    IO.inspect worker
+    Todo.DatabaseWorker.get(worker, key)
   end
 
   def init(db_folder) do
-    File.mkdir_p(db_folder) # Makes sure the folder exists
-    {:ok, db_folder}
+    File.mkdir_p(db_folder) # Make sure the folder exists
+    workers = start_workers(db_folder)
+    {:ok, {db_folder, workers}}
   end
 
-# Huge downside of a cast is that the caller can’t know whether the request was successfully handled. 
-# In fact, the caller can’t even be sure that the request reached the target process. 
-# This is a property of casts. 
-# Casts promote overall availability by allowing client processes to move on immediately after a request is issued. 
-# But this comes at the cost of consistency, because you can’t be confident about whether a request has succeeded.
-
-  def handle_cast({:store, key, data}, db_folder) do
-    spawn(fn ->
-      file_name(db_folder, key)
-      |> File.write!(:erlang.term_to_binary(data))
-    end)
-
-    {:noreply, db_folder}
+  def handle_call({:get_worker, key}, caller, {db_folder, workers}) do
+    key_hash = :erlang.phash2(key, 3)
+    IO.puts "Hash"
+    IO.inspect key_hash
+    {:reply, HashDict.get(workers, key_hash), workers}
+  end
+  def handle_call(m, _, s) do
+    {:noreply, s}
   end
 
-  def handle_call({:get, key}, caller, db_folder) do
-
-    spawn(fn -> 
-      data = case File.read(file_name(db_folder, key)) do
-        {:ok, contents} -> :erlang.binary_to_term(contents)
-        _ -> nil
-      end
-      GenServer.reply(caller, data)
-    end)
-
-    {:noreply, db_folder}
-  end 
-
-  defp file_name(db_folder, key), do: "#{db_folder}/#{key}"
+  defp start_workers(db_folder) do
+    Enum.reduce(
+      0..2, 
+      HashDict.new,
+      fn(i, acc) -> 
+        {:ok, pid} = Todo.DatabaseWorker.start(db_folder)
+        HashDict.put(acc, i, pid)
+      end)
+  end
 end

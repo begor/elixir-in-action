@@ -14,11 +14,14 @@ defmodule Todo.Cache do
     {:ok, HashDict.new}
   end
   def handle_call({:server_process, list_name}, _, todo_servers) do
+    IO.inspect todo_servers
     case HashDict.fetch(todo_servers, list_name) do
-      {:ok, todo_server} -> 
-        {:reply, todo_server, todo_servers}
+      {:ok, server} -> 
+        {:reply, server, todo_servers}
       :error -> 
+        IO.puts "Starting new server"
         {:ok, new_server} = Todo.Server.start(list_name)
+        IO.inspect new_server
         {
           :reply,
           new_server,
